@@ -18,6 +18,7 @@ void ExecuteUnfaker() {
                 {0x100AE, {0x74, 0x09}, {0x90, 0x90}},
                 {0x10096, {0x6A, 0x01}, {0xEB, 0x2B}}, // Kudos to fyryNy
                 {0x1180d, {0x6A, 0xFF}, {0xEB, 0x06}}, // Kudos to fyryNy
+                {0x48fff, {0x75, 0x09}, {0xEB, 0x15}}, // Kudos to fyryNy
         };
 
         VirtualProtect(imageBase, imageLength, PAGE_EXECUTE_READWRITE, &oldProtection);
