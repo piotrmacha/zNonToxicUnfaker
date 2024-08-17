@@ -1,0 +1,20 @@
+cmake_minimum_required(VERSION 3.29)
+project(zNonToxicUnfaker VERSION 0.1.0 LANGUAGES CXX)
+include(FetchContent)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+set(UNION_API_REPOSITORY "https://gitlab.com/union-framework/union-api.git")
+set(UNION_API_TAG "ede619be94cb6a7349c43b6678748ad1113a8c56")
+set(GOTHIC_API_REPOSITORY "https://gitlab.com/union-framework/gothic-api.git")
+set(GOTHIC_API_TAG "c74301b3606b16cd8e4badeffebbe4ec63940f24")
+FetchContent_Declare(union-api GIT_REPOSITORY ${UNION_API_REPOSITORY} GIT_TAG ${UNION_API_TAG})
+FetchContent_Declare(gothic-api GIT_REPOSITORY ${GOTHIC_API_REPOSITORY} GIT_TAG ${GOTHIC_API_TAG})
+FetchContent_MakeAvailable(union-api)
+FetchContent_MakeAvailable(gothic-api)
+
+add_library(zNonToxicUnfaker SHARED src/NonToxicUnfaker.cpp)
+target_include_directories(zNonToxicUnfaker PRIVATE src)
+target_link_libraries(zNonToxicUnfaker PRIVATE union_api_lib gothic_api)
