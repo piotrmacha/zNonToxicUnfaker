@@ -8,7 +8,7 @@ struct Patch {
 };
 
 void ExecuteUnfaker() {
-    if (const Union::Dll *othelloAbi = Union::Dll::Load("OTHELLO_ABI.DLL")) {
+    if (const Union::Dll *othelloAbi = Union::Dll::Find("OTHELLO_ABI.DLL")) {
         void *imageBase;
         size_t imageLength;
         DWORD oldProtection;
