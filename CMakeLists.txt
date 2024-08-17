@@ -6,6 +6,11 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
+set(GOTHIC_API_G1 ON)
+set(GOTHIC_API_G1A OFF)
+set(GOTHIC_API_G2 OFF)
+set(GOTHIC_API_G2A OFF)
+
 set(UNION_API_REPOSITORY "https://gitlab.com/union-framework/union-api.git")
 set(UNION_API_TAG "ede619be94cb6a7349c43b6678748ad1113a8c56")
 set(GOTHIC_API_REPOSITORY "https://gitlab.com/union-framework/gothic-api.git")
@@ -17,4 +22,5 @@ FetchContent_MakeAvailable(gothic-api)
 
 add_library(zNonToxicUnfaker SHARED src/NonToxicUnfaker.cpp)
 target_include_directories(zNonToxicUnfaker PRIVATE src)
+target_include_directories(zNonToxicUnfaker PRIVATE BEFORE userapi)
 target_link_libraries(zNonToxicUnfaker PRIVATE union_api_lib gothic_api)

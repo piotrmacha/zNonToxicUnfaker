@@ -1,5 +1,4 @@
 #include <Union/Hook.h>
-#include <Union/RawMemory.h>
 #include <ZenGin/zGothicAPI.h>
 
 struct Patch {
@@ -8,17 +7,12 @@ struct Patch {
     uint8_t replacement[2];
 };
 
-// G2A: 0x00424C70 public: void __thiscall CGameManager::Init(struct HWND__ * &)
-// G2:  0x00424940 public: void __thiscall CGameManager::Init(struct HWND__ * &)
-// G1A: 0x00426B20 public: void __thiscall CGameManager::Init(struct HWND__ * &)
-// G1:  0x004240C0 public: void __thiscall CGameManager::Init(struct HWND__ * &)
-void __fastcall CGameManager_Init_PartialHook(Union::Registers &reg) {
-    if (Union::Dll *othelloAbi = Union::Dll::Load("OTHELLO_ABI.DLL")) {
+void ExecuteUnfaker() {
+    if (const Union::Dll *othelloAbi = Union::Dll::Load("OTHELLO_ABI.DLL")) {
         void *imageBase;
         size_t imageLength;
+        DWORD oldProtection;
         othelloAbi->GetRange(imageBase, imageLength);
-        const auto rawMemory = Union::RawMemory::GetAccess(
-                imageBase, reinterpret_cast<void *>(reinterpret_cast<uint32_t>(imageBase) + imageLength));
 
         Patch patches[] = {
                 {0x100AE, {0x74, 0x09}, {0x90, 0x90}},
@@ -26,20 +20,24 @@ void __fastcall CGameManager_Init_PartialHook(Union::Registers &reg) {
                 {0x1180d, {0x6A, 0xFF}, {0xEB, 0x06}}, // Kudos to fyryNy
         };
 
+        VirtualProtect(imageBase, imageLength, PAGE_EXECUTE_READWRITE, &oldProtection);
         for (const auto &[offset, expected, replacement]: patches) {
-            const auto &data = rawMemory->Get<uint16_t>(offset);
-            auto &data1 = rawMemory->Get<uint8_t>(offset);
-            auto &data2 = rawMemory->Get<uint8_t>(offset + 1);
+            void* memory = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(imageBase) + offset);
+            uint8_t* data = reinterpret_cast<uint8_t*>(memory);
+
             (Union::String::MakeHexadecimal(imageBase) + "+" + Union::String::MakeHexadecimal(offset) + ": " +
              Union::String::MakeHexadecimal(data))
                     .StdPrintLine();
-            if (data1 == expected[0] && data2 == expected[1]) {
-                data1 = replacement[0];
-                data2 = replacement[1];
+
+            if (data[0] == expected[0] && data[1] == expected[1]) {
+                *(data) = replacement[0];
+                *(data + 1) = replacement[1];
+
                 (Union::String("Patch applied at ") + Union::String::MakeHexadecimal(imageBase) + "+" +
                  Union::String::MakeHexadecimal(offset) + ": " + Union::String::MakeHexadecimal(replacement[0]) + " " +
                  Union::String::MakeHexadecimal(replacement[1]))
                         .StdPrintLine();
+
             } else {
                 (Union::String("Patch NOT applied at ") + Union::String::MakeHexadecimal(imageBase) + "+" +
                  Union::String::MakeHexadecimal(offset) + ": " + Union::String::MakeHexadecimal(data) + " (expected: " +
@@ -47,6 +45,16 @@ void __fastcall CGameManager_Init_PartialHook(Union::Registers &reg) {
                         .StdPrintLine();
             }
         }
+        VirtualProtect(imageBase, imageLength, oldProtection, nullptr);
     }
 }
-auto Ivk_CGameManager_Init_PartialHook = Union::CreatePartialHook(reinterpret_cast<void *>(zSwitch(0x004240C0, 0x00426B20, 0x00424940, 0x00424C70)), &CGameManager_Init_PartialHook);
+
+// G2A: 0x00424C70 public: void __thiscall CGameManager::Init(struct HWND__ * &)
+// G2:  0x00424940 public: void __thiscall CGameManager::Init(struct HWND__ * &)
+// G1A: 0x00426B20 public: void __thiscall CGameManager::Init(struct HWND__ * &)
+// G1:  0x004240C0 public: void __thiscall CGameManager::Init(struct HWND__ * &)
+auto Ivk_CGameManager_Init_Hook = Union::CreateHook(reinterpret_cast<void *>(0x004240C0), &Gothic_I_Classic::CGameManager::Init_Hooked);
+void Gothic_I_Classic::CGameManager::Init_Hooked(HWND__*& hwnd) {
+    ExecuteUnfaker();
+    (this->*Ivk_CGameManager_Init_Hook)(hwnd);
+}
